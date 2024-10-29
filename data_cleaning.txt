@@ -1,0 +1,53 @@
+Create Table usa_gdp2
+Like usa_gdp;
+
+Insert usa_gdp2
+Select *
+From usa_gdp;
+
+Select *
+       ,Row_number() Over(Partition By Year
+                                       ,GDP
+                                       ,Capita
+                                       ,Growth
+                                       ,Source) as row_num
+From usa_gdp2;
+
+With dupl_cte as (
+                 Select *
+                        ,Row_number() Over(Partition By Year
+                                       ,GDP
+                                       ,Capita
+                                       ,Growth
+                                       ,Source) as row_num
+                 From usa_gdp2)
+Select *
+From dupl_cte
+Where row_num >1;
+
+Create Table usa_gdp3(
+       Year int 
+       ,GDP text 
+       ,Capita text 
+       ,Growth text 
+       ,Source text
+       ,row_num int);
+       
+Insert Into usa_gdp3 
+				Select *
+                        ,Row_number() Over(Partition By Year
+                                       ,GDP
+                                       ,Capita
+                                       ,Growth
+                                       ,Source) as row_num
+                 From usa_gdp2;
+                 
+Select *
+From usa_gdp3;
+
+Delete
+From usa_gdp3
+Where row_num >1;
+
+Select *
+From usa_gdp3;
