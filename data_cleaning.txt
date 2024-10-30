@@ -1,53 +1,179 @@
-Create Table usa_gdp2
-Like usa_gdp;
+/*
 
-Insert usa_gdp2
+Cleaning Data in SQL Queries
+
+*/
+
+
+Create Table raw_data                 # Since we're gonna edit the table it's better to create a copy in case we need to start from a scratch
+Like chase_bank;
+
+Insert raw_data
 Select *
-From usa_gdp;
+From chase_bank;
 
 Select *
-       ,Row_number() Over(Partition By Year
-                                       ,GDP
-                                       ,Capita
-                                       ,Growth
-                                       ,Source) as row_num
-From usa_gdp2;
+From raw_data
+Order By State;
 
-With dupl_cte as (
-                 Select *
-                        ,Row_number() Over(Partition By Year
-                                       ,GDP
-                                       ,Capita
-                                       ,Growth
-                                       ,Source) as row_num
-                 From usa_gdp2)
+
+-- Checking the table for duplicates
+
 Select *
-From dupl_cte
+       ,Row_Number() Over(Partition By Institution
+                                       ,main_office
+                                       ,branch_name
+                                       ,branch_number
+                                       ,established_date 
+                                       ,street_address
+                                       ,City
+                                       ,County
+                                       ,State
+                                       ,Zipcode
+                                       ,2010_Deposits) as row_num
+From raw_data;
+
+
+
+-- Creating a CTE so we can see those duplicate rows
+With dupl as ( Select *
+                       ,Row_Number() Over(Partition By 
+                                       Institution
+                                       ,main_office
+                                       ,branch_name
+                                       ,branch_number
+                                       ,established_date 
+                                       ,street_address
+                                       ,City
+                                       ,County
+                                       ,State
+                                       ,Zipcode
+                                       ,2010_Deposits) as row_num
+From raw_data)
+Select *
+From dupl
 Where row_num >1;
 
-Create Table usa_gdp3(
-       Year int 
-       ,GDP text 
-       ,Capita text 
-       ,Growth text 
-       ,Source text
-       ,row_num int);
-       
-Insert Into usa_gdp3 
-				Select *
-                        ,Row_number() Over(Partition By Year
-                                       ,GDP
-                                       ,Capita
-                                       ,Growth
-                                       ,Source) as row_num
-                 From usa_gdp2;
-                 
-Select *
-From usa_gdp3;
 
-Delete
-From usa_gdp3
+-- Making sure that the rows we have are duplicates by looking through each of them
+Select *
+From raw_data
+Where County = 'Kings' and street_address = '79 Hamilton Avenue' ;
+
+
+
+Delete                       # This command didnt work so we need to find a way around
+From dupl
 Where row_num >1;
 
+
+
+--Creating a copy of the table and adding a new column row_num
+Create Table chase_bank1 (                   
+                         Institution text 
+                         ,main_office int 
+                         ,branch_name text 
+                         ,branch_number int 
+                         ,established_date text 
+			 ,acquired_date text 
+                         ,street_address text 
+			 ,City text 
+			 ,County text 
+			 ,State text 
+                         ,Zipcode int 
+                         ,Latitude double 
+                         ,Longitude double
+                         ,2010_Deposits int 
+                         ,2011_Deposits int 
+                         ,2012_Deposits int 
+			 ,2013_Deposits int 
+                         ,2014_Deposits int 
+                         ,2015_Deposits int 
+                         ,2016_Deposits int
+                         ,row_num int);
+
+
+Insert Into chase_bank1                    #Adding data into Table
 Select *
-From usa_gdp3;
+       ,Row_Number() Over(Partition By Institution
+                                       ,main_office
+                                       ,branch_name
+                                       ,branch_number
+                                       ,established_date 
+                                       ,street_address
+                                       ,City
+                                       ,County
+                                       ,State
+                                       ,Zipcode
+                                       ,2010_Deposits) as row_num
+From raw_data;
+
+
+Select *
+From chase_bank1;
+
+Delete                          # Deleting duplicate rows we only had three
+From chase_bank1
+Where row_num >1;
+
+
+
+-- Standardize Date Format
+Select Distinct (Institution)      # Checking all columns one by one to make sure they dont have spelling errors
+From chase_bank1;
+
+Update chase_bank1                 # Replacing column name
+Set Institution = 'JPM Chase Bank'
+Where Institution Like 'JPMorgan%';
+
+Select Distinct(City)
+From chase_bank1;
+
+Select *
+From chase_bank1
+Where City = 'Milwaukee'
+Order By State;
+
+
+-- By using Trim(Trailing) funct we delete unnecessary signs
+Update chase_bank1                                             
+Set City =  Trim(Trailing '.' from City) 
+Where City Like 'Milwaukee%';
+
+
+ALTER TABLE  chase_bank1                                            # Changing date format from text to date
+Modify column `established_date` DATE;
+
+
+
+-- Following columns are pretty useless in our analysis so we can drop them
+Alter Table chase_bank1
+Drop column Latitude;
+
+Alter Table chase_bank1
+Drop column Longitude;
+
+
+-- Looking for NULL or Blank values, in some cases we can populate the rows in some not
+Select *
+From chase_bank1
+Where County is Null or
+      County = '';
+
+Select *
+From chase_bank1
+Where City is Null or
+      City = '';
+      
+Select *
+From chase_bank1
+Where 2010_Deposits is Null or
+      2010_Deposits = '';
+
+
+Select *
+From chase_bank1
+Order By State; 
+
+/* Now our data is structured and ready for further use,
+          we can export it to Excel file and use for visualization */
