@@ -171,6 +171,11 @@ Where 2010_Deposits is Null or
       2010_Deposits = '';
 
 
+Alter Table chase_bank1                             # Deleting column row_num
+Drop column row_num;
+
+
+
 Select *
 From chase_bank1
 Order By State; 
