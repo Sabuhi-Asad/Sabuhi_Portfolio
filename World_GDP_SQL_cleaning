@@ -1,1 +1,101 @@
+/* In this file we're cleaning the data using various SQL functions
+   to be able to analyze it and build a visualization on Tableau */
+
+
+
+Create Table gdp_raw                        # First of all creating a copy of the table jsut in case
+Like gdp;
+
+Insert Into gdp_raw
+Select *
+From gdp;
+
+Select *
+From gdp_raw
+Order by continent;
+
+Alter Table gdp_raw                                 # One of the columns has a messed up title so we need to rename it first
+Rename column ï»¿ranking to ranking;
+
+
+
+Select *                                            # Checking for duplicates
+       ,Row_number() Over(Partition By
+                                    ranking
+                                    ,code
+                                    ,country
+                                    ,GDP_million_usdollar
+                                    ,continent) as row_num
+From gdp_raw;
+
+With dupl_cte as (Select *
+                          ,Row_number() Over(Partition By
+													   ranking
+													   ,code
+													   ,country
+                                                       ,GDP_million_usdollar
+                                                       ,continent) as row_num
+From gdp_raw)
+Select *
+From dupl_cte
+Where row_num > 1;
+
+
+# This table had no duplicates so we can proceed and try to standardize the data and also check for NULL or blank values and any other discrepancy
+
+
+
+Select *
+From gdp_raw
+Where country is NULL or
+      country = '';
+      
+Select *
+From gdp_raw
+Where GDP_million_usdollar is NULL or
+	  GDP_million_usdollar = '';
+
+
+
+Select Distinct(country)                 # Some country names had to be fixed   
+From gdp_raw;
+
+Update gdp_raw
+Set country = 'Korea'
+Where country like 'Korea%';
+
+Update gdp_raw
+Set country = 'Turkey'
+Where country like 'TÃ¼rkiye';					
+
+
+Update gdp_raw
+Set country = 'Vietnam'
+Where country like 'Viet Nam';	
+
+Select Distinct(continent)
+From gdp_raw;
+
+Update gdp_raw
+Set continent = 'Other'
+Where continent is NULL;
+
+
+/* The data we had was pretty much clean but after a few lines of code it's structured now
+                                and can be used for further analysis  */
+
+
+Source: https://datacatalog.worldbank.org/search/dataset/0038130/GDP-ranking
+                                           
+
+
+
+
+
+
+
+
+
+
+
 
