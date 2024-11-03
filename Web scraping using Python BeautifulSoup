@@ -1,1 +1,106 @@
+# First of all we need to import the following libraries
 
+from bs4 import BeautifulSoup
+import requests
+import pandas as pd
+
+
+# The following url contains the data that we want to extract
+
+url = 'https://en.wikipedia.org/wiki/List_of_largest_companies_in_the_United_States_by_revenue'
+page = requests.get(url)
+soup = BeautifulSoup(page.text, 'html')          # Creating soup
+
+
+# The url has various tables but we only gonna work with the first one, so need to specify it [0]
+
+table = soup.find_all('table')[0]     
+print(table)                                   # This command gives us all the data that the page contains
+
+
+<table class="wikitable sortable">
+<caption>
+</caption>
+<tbody><tr>
+<th>Rank
+</th>
+<th>Name
+</th>
+<th>Industry
+</th>
+<th>Revenue <br/>(USD millions)
+</th>
+<th>Revenue growth
+</th>
+<th>Employees
+</th>
+<th>Headquarters
+</th></tr>
+<tr>
+<td>1
+...............................
+...............................
+...............................
+<td style="text-align:center;">85,000
+</td>
+<td><a href="/wiki/Richfield,_Minnesota" title="Richfield, Minnesota">Richfield, Minnesota</a>
+</td></tr></tbody></table>
+
+
+
+columns = table.find_all('th')                         # Extracting the columns of our table
+print(columns)
+
+[<th>Rank
+</th>, <th>Name
+</th>, <th>Industry
+</th>, <th>Revenue <br/>(USD millions)
+</th>, <th>Revenue growth
+</th>, <th>Employees
+</th>, <th>Headquarters
+</th>]
+
+t_columns = [title.text.strip() for title in columns]             # Creating a list
+print(t_columns)
+['Rank', 'Name', 'Industry', 'Revenue (USD millions)', 'Revenue growth', 'Employees', 'Headquarters']
+
+
+df = pd.DataFrame(columns = t_columns)                            # Creating a Dataframe using pandas library            
+print(df)
+
+Empty DataFrame
+Columns: [Rank, Name, Industry, Revenue (USD millions), Revenue growth, Employees, Headquarters]
+Index: []
+
+
+/* Here 'tr' tags stand for the titles of our columns and 'td' for the data
+   We need to create a 'for' loop to add that data into rows */
+
+column_data = table.find_all('tr')                                
+for row in column_data[1:]:
+    row_data = row.find_all('td')
+    ind_row_data = [data.text.strip() for data in row_data]
+    length = len(df)
+    df.loc[length] = ind_row_data
+
+    
+df
+   Rank                  Name  ...  Employees                    Headquarters
+0     1               Walmart  ...  2,100,000           Bentonville, Arkansas
+1     2                Amazon  ...  1,525,000             Seattle, Washington
+2     3                 Apple  ...    161,000           Cupertino, California
+3     4    UnitedHealth Group  ...    440,000           Minnetonka, Minnesota
+4     5    Berkshire Hathaway  ...    396,500                 Omaha, Nebraska
+..  ...                   ...  ...        ...                             ...
+95   96                  TIAA  ...     16,023         New York City, New York
+96   97                   CHS  ...     10,609  Inver Grove Heights, Minnesota
+97   98  Bristol-Myers Squibb  ...     34,100         New York City, New York
+98   99  Dow Chemical Company  ...     35,900               Midland, Michigan
+99  100              Best Buy  ...     85,000            Richfield, Minnesota
+
+[100 rows x 7 columns]
+
+
+# The final command to create a file with all the data
+
+df.to_csv(r'C:\Users\Asad\Desktop\Companies.csv', index = False)
